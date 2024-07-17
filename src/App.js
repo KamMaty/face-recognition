@@ -8,6 +8,20 @@ import SignIn from "./components/SignIn/SignIn";
 import Register from "./components/Register/Register";
 import "./App.css";
 
+const initialState = {
+  input: "",
+  imageUrl: "",
+  box: {},
+  route: "signin",
+  isSignedIn: false,
+  user: {
+    id: "",
+    name: "",
+    email: "",
+    entries: 0,
+    joined: "",
+  },
+};
 // configurate object for fetching
 
 const setupClarifaiRequestOptions = (imageUrl) => {
@@ -52,20 +66,7 @@ const setupClarifaiRequestOptions = (imageUrl) => {
 class App extends Component {
   constructor() {
     super();
-    this.state = {
-      input: "",
-      imageUrl: "",
-      box: {},
-      route: "signin",
-      isSignedIn: false,
-      user: {
-        id: "",
-        name: "",
-        email: "",
-        entries: 0,
-        joined: "",
-      },
-    };
+    this.state = initialState;
   }
 
   loadUser = (data) => {
@@ -79,12 +80,6 @@ class App extends Component {
       },
     });
   };
-
-  // componentDidMount() {
-  //   fetch("http://localhost:3000")
-  //     .then((response) => response.json())
-  //     .then(console.log);
-  // }
 
   // Creating face box snippets
   calculateFaceLocation = (data) => {
@@ -140,7 +135,7 @@ class App extends Component {
 
   onRouteChange = (route) => {
     if (route === "signout") {
-      this.setState({ isSignedIn: false });
+      this.setState(initialState);
     } else if (route === "home") {
       this.setState({ isSignedIn: true });
     }
@@ -151,7 +146,10 @@ class App extends Component {
     const { isSignedIn, imageUrl, box, route } = this.state;
     return (
       <div className="App">
-        {/* TODO - Configurate background animation with tsparticles */}
+        {
+          /* TODO - Configurate background animation with tsparticles */
+          // TODO - Fix bug when signing out user is rerouted to register}
+        }
         <Navigation
           isSignedIn={isSignedIn}
           onRouteChange={this.onRouteChange}
