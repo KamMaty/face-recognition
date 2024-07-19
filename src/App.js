@@ -11,7 +11,7 @@ import "./App.css";
 const initialState = {
   input: "",
   imageUrl: "",
-  box: {},
+  boxes: [],
   route: "signin",
   isSignedIn: false,
   user: {
@@ -23,45 +23,6 @@ const initialState = {
   },
 };
 // configurate object for fetching
-
-const setupClarifaiRequestOptions = (imageUrl) => {
-  // Your PAT (Personal Access Token) can be found in the Account's Security section
-  const PAT = "26beae7f3fb0456589f393a140418ea7";
-  // Specify the correct user_id/app_id pairings
-  // Since you're making inferences outside your app's scope
-  const USER_ID = "mutu";
-  const APP_ID = "face-recognition";
-  // Change these to whatever model and image URL you want to use
-  // const MODEL_ID = "face-detection";
-  const IMAGE_URL = imageUrl;
-
-  const raw = JSON.stringify({
-    user_app_id: {
-      user_id: USER_ID,
-      app_id: APP_ID,
-    },
-    inputs: [
-      {
-        data: {
-          image: {
-            url: IMAGE_URL,
-          },
-        },
-      },
-    ],
-  });
-
-  const requestOptions = {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      Authorization: "Key " + PAT,
-    },
-    body: raw,
-  };
-
-  return requestOptions;
-};
 
 class App extends Component {
   constructor() {
@@ -83,22 +44,21 @@ class App extends Component {
 
   // Creating face box snippets
   calculateFaceLocation = (data) => {
-    const clarifaiFace =
-      data.outputs[0].data.regions[0].region_info.bounding_box;
     const image = document.getElementById("inputimage");
     const width = Number(image.width);
     const height = Number(image.height);
 
-    return {
-      leftCol: clarifaiFace.left_col * width,
-      topRow: clarifaiFace.top_row * height,
-      rightCol: width - clarifaiFace.right_col * width,
-      bottomRow: height - clarifaiFace.bottom_row * height,
-    };
-  };
+    const calrifaiFaces = data.map((face) => {
+      const path = face.region_info.bounding_box;
 
-  displayFaceBox = (box) => {
-    this.setState({ box: box });
+      return {
+        leftCol: path.left_col * width,
+        topRow: path.top_row * height,
+        rightCol: width - path.right_col * width,
+        bottomRow: height - path.bottom_row * height,
+      };
+    });
+    return calrifaiFaces;
   };
 
   onInputChange = (event) => {
@@ -107,10 +67,15 @@ class App extends Component {
   // TODO - Alternative way for fetch this data by configurating Clarify options is use this.state.imageurl and use callback function to keep load image after click button
   onImageSubmit = () => {
     this.setState({ imageUrl: this.state.input });
-    fetch(
-      "https://api.clarifai.com/v2/models/face-detection/outputs",
-      setupClarifaiRequestOptions(this.state.input)
-    )
+    fetch("http://localhost:3000/imageurl", {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: this.state.input,
+      }),
+    })
       .then((response) => response.json())
       .then((result) => {
         if (result) {
@@ -128,7 +93,7 @@ class App extends Component {
               this.setState(Object.assign(this.state.user, { entries: count }));
             });
         }
-        this.displayFaceBox(this.calculateFaceLocation(result));
+        this.setState({ boxes: this.calculateFaceLocation(result) });
       })
       .catch((error) => console.log("error", error));
   };
@@ -143,7 +108,7 @@ class App extends Component {
   };
 
   render() {
-    const { isSignedIn, imageUrl, box, route } = this.state;
+    const { isSignedIn, imageUrl, boxes, route } = this.state;
     return (
       <div className="App">
         {
@@ -165,7 +130,7 @@ class App extends Component {
               onInputChange={this.onInputChange}
               onImageSubmit={this.onImageSubmit}
             />
-            <FaceRecognition box={box} imageUrl={imageUrl} />
+            <FaceRecognition boxes={boxes} imageUrl={imageUrl} />
           </div>
         ) : route === "signin" ? (
           <SignIn loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
